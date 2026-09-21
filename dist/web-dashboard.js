@@ -1,32 +1,57 @@
 import http from 'node:http';
 import path from 'node:path';
 import os from 'node:os';
+import dotenv from 'dotenv';
 import { WpCliEngine } from './engines/cli.js';
+import { WpRestEngine } from './engines/rest.js';
 import { SecurityManager } from './security.js';
 import { createTools } from './tools.js';
+dotenv.config();
 const PORT = 3300;
-const sitePath = process.env.WP_PATH || '/Volumes/T7/Other local/wptest';
-const localwpScript = process.env.LOCALWP_SCRIPT_PATH ||
-    path.join(os.homedir(), '.gemini/config/skills/localwp-cli-skill/scripts/localwp-cli.sh');
+let currentSite = 'dddprint';
 let safeMode = true;
+const SITES_CONFIG = {
+    dddprint: {
+        name: process.env.WP_SITE_NAME || 'Remote WordPress (REST API)',
+        adapter: 'rest',
+        url: process.env.WP_SITE_URL || 'https://dddprint.ir',
+        username: process.env.WP_USERNAME || 'admin',
+        password: process.env.WP_APP_PASSWORD || '',
+    },
+    wptest: {
+        name: 'Local WordPress (WP-CLI)',
+        adapter: 'cli',
+        path: process.env.WP_PATH || process.cwd(),
+        localwpScript: process.env.LOCALWP_SCRIPT_PATH ||
+            path.join(os.homedir(), '.gemini/config/skills/localwp-cli-skill/scripts/localwp-cli.sh'),
+    },
+};
 let security = new SecurityManager({ safeMode });
-let engine = new WpCliEngine({
-    wpPath: sitePath,
-    localwpScriptPath: localwpScript,
-    security,
-});
-let tools = createTools(engine, security);
-let toolMap = new Map(tools.map((t) => [t.name, t]));
-function rebuildTools() {
+let engine;
+function initEngine() {
     security = new SecurityManager({ safeMode });
-    engine = new WpCliEngine({
-        wpPath: sitePath,
-        localwpScriptPath: localwpScript,
-        security,
-    });
+    const conf = SITES_CONFIG[currentSite];
+    if (conf.adapter === 'rest') {
+        engine = new WpRestEngine({
+            siteUrl: conf.url,
+            username: conf.username,
+            appPassword: conf.password,
+            security,
+        });
+    }
+    else {
+        engine = new WpCliEngine({
+            wpPath: conf.path,
+            localwpScriptPath: conf.localwpScript,
+            security,
+        });
+    }
     tools = createTools(engine, security);
     toolMap = new Map(tools.map((t) => [t.name, t]));
 }
+let tools = createTools(engine, security);
+let toolMap = new Map(tools.map((t) => [t.name, t]));
+initEngine();
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -71,9 +96,22 @@ const HTML_CONTENT = `<!DOCTYPE html>
     }
     .title-group h1 { font-size: 1.7rem; color: var(--heading); display: flex; align-items: center; gap: 10px; }
     .title-group p { color: var(--text-muted); font-size: 0.95rem; }
+    .controls-header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .site-select {
+      background: #1f242c;
+      color: var(--heading);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
     .badge {
-      display: inline-block;
-      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 600;
@@ -85,7 +123,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
     @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
     
-    .sidebar { display: flex; flex-direction: column; gap: 12px; }
+    .sidebar { display: flex; flex-direction: column; gap: 10px; }
     .tool-btn {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -121,6 +159,8 @@ const HTML_CONTENT = `<!DOCTYPE html>
       align-items: center;
       border-bottom: 1px solid var(--border);
       padding-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
     .panel-header h2 { font-size: 1.25rem; color: var(--heading); font-family: 'JetBrains Mono', monospace; direction: ltr; }
     .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -176,7 +216,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
       font-size: 0.85rem;
       color: #7ee787;
       overflow-x: auto;
-      max-height: 480px;
+      max-height: 520px;
       white-space: pre-wrap;
       word-break: break-all;
       direction: ltr;
@@ -194,8 +234,12 @@ const HTML_CONTENT = `<!DOCTYPE html>
         <h1>🚀 WordPress MCP Tester & Dashboard</h1>
         <p>محیط تعاملی تست و بررسی زنده ابزارهای سرور Model Context Protocol برای وردپرس</p>
       </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <span class="badge badge-live">🟢 متصل به سایت محلی</span>
+      <div class="controls-header">
+        <select class="site-select" id="siteSelect" onchange="switchSite()">
+          <option value="dddprint" selected>🌐 dddprint.ir (سایت لایو - REST API)</option>
+          <option value="wptest">💻 wptest.local (سایت لوکال - WP-CLI)</option>
+        </select>
+        <span class="badge badge-live" id="siteBadge">🟢 متصل: dddprint.ir</span>
         <label class="toggle-safe badge badge-safe" id="safeBadge">
           <input type="checkbox" id="safeModeToggle" checked onchange="toggleSafeMode()">
           <span>حالت امن (Safe Mode): فعال</span>
@@ -271,17 +315,34 @@ const HTML_CONTENT = `<!DOCTYPE html>
         container.innerHTML = propKeys.map(k => {
           const prop = props[k];
           const isTextArea = k === 'content';
+          let defaultVal = '';
+          if (k === 'perPage') defaultVal = '3';
+          if (k === 'id') defaultVal = '1949';
           return \`
             <div class="form-group">
               <label for="arg_\${k}">\${k} \${prop.description ? '(' + prop.description + ')' : ''}:</label>
               \${isTextArea 
                 ? \`<textarea class="form-control" id="arg_\${k}" placeholder="\${prop.description || ''}"></textarea>\`
-                : \`<input class="form-control" type="\${prop.type === 'number' ? 'number' : 'text'}" id="arg_\${k}" placeholder="\${prop.description || ''}" \${k === 'perPage' ? 'value="5"' : ''} \${k === 'id' ? 'value="1714"' : ''}>\`
+                : \`<input class="form-control" type="\${prop.type === 'number' ? 'number' : 'text'}" id="arg_\${k}" placeholder="\${prop.description || ''}" value="\${defaultVal}">\`
               }
             </div>
           \`;
         }).join('');
       }
+    }
+
+    async function switchSite() {
+      const select = document.getElementById('siteSelect');
+      const site = select.value;
+      const res = await fetch('/api/switch-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site })
+      });
+      const data = await res.json();
+      document.getElementById('siteBadge').innerText = '🟢 متصل: ' + data.site;
+      document.getElementById('outputBox').innerText = '// متصل به سایت ' + data.site + '. برای تست ابزارها کلیک کنید.';
+      loadTools();
     }
 
     async function toggleSafeMode() {
@@ -313,7 +374,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
 
       runBtn.disabled = true;
       loader.style.display = 'inline-block';
-      runText.innerText = 'در حال ارتباط با وردپرس...';
+      runText.innerText = 'در حال ارسال به MCP...';
       outBox.className = 'output-box';
       outBox.innerText = 'Sending JSON-RPC request to WordPress MCP engine...';
 
@@ -366,9 +427,14 @@ const HTML_CONTENT = `<!DOCTYPE html>
 `;
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
-    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
+    if ((req.method === 'GET' || req.method === 'HEAD') && (url.pathname === '/' || url.pathname === '/index.html')) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(HTML_CONTENT);
+        if (req.method === 'GET') {
+            res.end(HTML_CONTENT);
+        }
+        else {
+            res.end();
+        }
         return;
     }
     if (req.method === 'GET' && url.pathname === '/api/tools') {
@@ -380,6 +446,29 @@ const server = http.createServer(async (req, res) => {
         }))));
         return;
     }
+    if (req.method === 'POST' && url.pathname === '/api/switch-site') {
+        let body = '';
+        req.on('data', (chunk) => (body += chunk));
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                if (payload.site === 'dddprint' || payload.site === 'wptest') {
+                    currentSite = payload.site;
+                    initEngine();
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ site: currentSite }));
+                }
+                else {
+                    throw new Error('Invalid site selection');
+                }
+            }
+            catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
     if (req.method === 'POST' && url.pathname === '/api/toggle-safe') {
         let body = '';
         req.on('data', (chunk) => (body += chunk));
@@ -387,7 +476,7 @@ const server = http.createServer(async (req, res) => {
             try {
                 const payload = JSON.parse(body);
                 safeMode = Boolean(payload.safeMode);
-                rebuildTools();
+                initEngine();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ safeMode }));
             }
@@ -450,6 +539,6 @@ server.listen(PORT, () => {
     console.log(`\n======================================================`);
     console.log(`🚀 WordPress MCP Interactive Dashboard is LIVE!`);
     console.log(`🌐 Open in your browser: http://localhost:${PORT}`);
-    console.log(`🎯 Connected Site: ${sitePath}`);
+    console.log(`🎯 Active Default Site: ${SITES_CONFIG[currentSite].name}`);
     console.log(`======================================================\n`);
 });

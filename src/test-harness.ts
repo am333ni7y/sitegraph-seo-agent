@@ -8,7 +8,7 @@ async function runTests() {
   console.log('🧪 Starting WordPress MCP Server Test Suite');
   console.log('=============================================\n');
 
-  const sitePath = '/Volumes/T7/Other local/wptest';
+  const sitePath = process.env.WP_PATH || '/Volumes/T7/Other local/wptest';
   const localwpScript = path.join(
     os.homedir(),
     '.gemini/config/skills/localwp-cli-skill/scripts/localwp-cli.sh'
