@@ -1,46 +1,75 @@
-# 🚀 WordPress MCP Server (`wordpress-mcp`)
+# 🚀 WordPress Model Context Protocol (MCP) Server
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Model Context Protocol](https://img.shields.io/badge/MCP-Protocol-purple.svg)](https://modelcontextprotocol.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Model Context Protocol](https://img.shields.io/badge/MCP-Protocol-7057ff.svg)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![GitHub Stars](https://img.shields.io/github/stars/am333ni7y/wordpress-mcp.svg?style=social)](https://github.com/am333ni7y/wordpress-mcp)
 
-A high-performance, secure **Model Context Protocol (MCP)** server connecting WordPress websites to modern AI agents (**Claude Code**, **Google Antigravity**, **Cursor**, **Windsurf**, etc.).
+**English Documentation** | [راهنمای فارسی (Persian)](README.fa.md)
 
-Designed with a **Dual-Engine Architecture** and **Zero-Trust Security Guard**, it allows AI agents to inspect site health, explore taxonomies, query posts/pages, audit SEO, and perform content operations safely without exposing your site to hacks or prompt injection attacks.
+A high-performance, enterprise-grade **Model Context Protocol (MCP)** server connecting WordPress sites directly to modern AI agents (**Claude Code**, **Cursor**, **Google Antigravity**, **Windsurf**, etc.).
+
+Designed with a **Dual-Engine Architecture** and **Zero-Trust Security Guard**, it allows AI agents to inspect site health, query posts and pages, explore ACF & custom post types, optimize SEO, and manage content safely without exposing your site to hacks or prompt injection vulnerabilities.
 
 ---
 
-[English Documentation](#overview) | [راهنمای فارسی](#راهنمای-فارسی)
+## 🏗 Architecture Overview
+
+```
+                   ┌─────────────────────────────────────────┐
+                   │  AI Agents (Claude Code, Cursor, AGY)   │
+                   └────────────────────┬────────────────────┘
+                                        │  JSON-RPC / Stdio
+                                        ▼
+             ┌─────────────────────────────────────────────────────┐
+             │                wordpress-mcp Server                 │
+             │   ┌──────────────────────────────────────────────┐  │
+             │   │    Zero-Trust Security Guard (Safe Mode)     │  │
+             │   └──────────────────────┬───────────────────────┘  │
+             └──────────────────────────┼──────────────────────────┘
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                       ▼
+        ┌───────────────────────┐               ┌───────────────────────┐
+        │     WpCliEngine       │               │      WpRestEngine     │
+        │   (LocalWP / CLI)     │               │ (Remote REST + Auth)  │
+        └───────────┬───────────┘               └───────────┬───────────┘
+                    │                                       │
+                    ▼                                       ▼
+         [ Local Development ]                    [ Live Production ]
+       LocalWP, Docker, Valet                    WordPress REST API
+```
 
 ---
 
 ## 🌟 Key Features
 
-- **Dual-Engine Architecture**:
-  - **WP-CLI Engine**: Connects instantly to local WordPress environments (LocalWP, Docker, Valet, native WP-CLI) with zero network overhead.
-  - **REST API Engine**: Connects to remote or staging sites over HTTPS using WordPress standard **Application Passwords**.
-- **Zero-Trust Security & Safe Mode**:
-  - **Read-Only by Default**: Blocks `create`, `update`, and destructive actions unless explicitly permitted with `--allow-write` or `SAFE_MODE=false`.
-  - **No Raw Eval / No Raw SQL**: AI agents only interact through structured, validated schemas (Zod-enforced).
-  - **Audit Logging**: Logs every tool execution, parameters, and outcomes.
-- **Rich Context for Developers & Content Teams**:
-  - Full visibility into Custom Post Types (CPTs), ACF fields, Taxonomies, and Plugins.
-  - Live `debug.log` inspection for diagnosing PHP errors and theme bugs.
+- **Dual-Engine Flexibility**:
+  - **Local Engine (`cli`)**: Connects with zero latency to local installations (LocalWP, Valet, Docker, native WP-CLI) with automatic PHP error and notice filtering.
+  - **Remote Engine (`rest`)**: Securely interfaces with remote production or staging sites over HTTPS via standard WordPress **Application Passwords**.
+- **Zero-Trust Security Guard**:
+  - **Read-Only by Default**: All state-mutating actions (`wp_create_post`, `wp_update_post`) are blocked unless explicitly allowed via `--allow-write` or `SAFE_MODE=false`.
+  - **No Raw Eval / No Raw SQL**: The AI interacts exclusively through strictly validated, typed Zod schemas.
+  - **Input Sanitization**: Automatically strips null bytes and malicious control characters.
+  - **Audit Logging**: Optional audit trail logs every single invocation and argument set with timestamps.
+- **Built-in Interactive Web Playground**:
+  - Includes an embedded web playground (`npm run dashboard`) running on `http://localhost:3300` for visual verification and multi-site toggling.
 
 ---
 
-## 🛠 Available MCP Tools
+## 🛠 Available Tools
 
-| Tool | Description | Safe Mode Behavior |
+| Tool | Description | Safe Mode Status |
 | :--- | :--- | :--- |
-| `wp_get_site_info` | Site URL, WordPress version, active theme, server info, and safe mode status. | Allowed |
-| `wp_list_posts` | Filter, search, and paginate posts/pages with metadata. | Allowed |
-| `wp_get_post` | Retrieve full post content, custom fields, taxonomies, and metadata by ID. | Allowed |
-| `wp_create_post` | Create a new post or page with title, body, status, categories, and meta. | **Blocked in Safe Mode** |
-| `wp_update_post` | Update existing post content, title, excerpt, status, or meta fields. | **Blocked in Safe Mode** |
-| `wp_list_plugins` | Check installed plugins, active states, versions, and update availability. | Allowed |
-| `wp_get_taxonomies_and_types` | Inspect all registered Custom Post Types (CPTs) and Taxonomies. | Allowed |
-| `wp_get_debug_log` | Read recent errors from WordPress `debug.log` for real-time debugging. | Allowed (CLI only) |
+| `wp_get_site_info` | Retrieves site URL, WordPress core version, active theme, name, and security status. | Allowed |
+| `wp_list_posts` | Searches and filters posts/pages by keyword, post type, status, and pagination. | Allowed |
+| `wp_get_post` | Fetches full post content (including Gutenberg blocks), metadata, and custom fields by ID. | Allowed |
+| `wp_create_post` | Creates a new post or page with title, body, status, categories, and meta fields. | **Blocked in Safe Mode** |
+| `wp_update_post` | Updates existing post content, title, excerpt, status, or meta fields. | **Blocked in Safe Mode** |
+| `wp_list_plugins` | Lists installed plugins, active/inactive states, version numbers, and update status. | Allowed |
+| `wp_get_taxonomies_and_types` | Inspects all registered Custom Post Types (CPTs) and Taxonomies. Ideal for coding templates. | Allowed |
+| `wp_get_debug_log` | Tails recent errors and warnings from `debug.log` for real-time PHP troubleshooting. | Allowed (CLI only) |
 
 ---
 
@@ -49,27 +78,29 @@ Designed with a **Dual-Engine Architecture** and **Zero-Trust Security Guard**, 
 ### 1. Installation
 
 ```bash
-git clone https://github.com/your-username/wordpress-mcp.git
+git clone https://github.com/am333ni7y/wordpress-mcp.git
 cd wordpress-mcp
 npm install
 npm run build
 ```
 
-### 2. Configuration for AI Clients
+---
 
-#### A. Claude Code / Antigravity / Cursor Configuration
+## ⚙️ Client Configurations
 
-Add this to your MCP configuration file (e.g. `~/.cursor/mcp.json` or `.mcp.json`):
+### A. Cursor (`~/.cursor/mcp.json`)
 
-**For Local Development (LocalWP / WP-CLI):**
+Add the server to your Cursor MCP settings:
+
+**For Local Sites (LocalWP / WP-CLI):**
 ```json
 {
   "mcpServers": {
-    "wordpress": {
+    "wordpress-local": {
       "command": "node",
       "args": [
-        "/path/to/wordpress-mcp/dist/index.js",
-        "--path", "/path/to/your/wordpress/site",
+        "/absolute/path/to/wordpress-mcp/dist/index.js",
+        "--path", "/path/to/wordpress/site",
         "--adapter", "cli"
       ]
     }
@@ -77,14 +108,14 @@ Add this to your MCP configuration file (e.g. `~/.cursor/mcp.json` or `.mcp.json
 }
 ```
 
-**For Remote WordPress Sites (REST API):**
+**For Remote Sites (REST API):**
 ```json
 {
   "mcpServers": {
-    "wordpress": {
+    "wordpress-live": {
       "command": "node",
       "args": [
-        "/path/to/wordpress-mcp/dist/index.js",
+        "/absolute/path/to/wordpress-mcp/dist/index.js",
         "--adapter", "rest",
         "--url", "https://your-site.com",
         "--username", "your_admin_user",
@@ -95,55 +126,78 @@ Add this to your MCP configuration file (e.g. `~/.cursor/mcp.json` or `.mcp.json
 }
 ```
 
-> **Note:** Generate the Application Password in WordPress admin: **Users > Profile > Application Passwords**.
+> **How to create an Application Password:** In your WordPress admin, go to **Users > Profile**, scroll to **Application Passwords**, enter a name (e.g. `Cursor-MCP`), and click **Add New Application Password**.
 
 ---
 
-## 🔒 Security Blueprint
-
-1. **Safe Mode (`SAFE_MODE=true`)**:
-   By default, the server operates strictly in **Read-Only Mode**. All state-mutating tools (`wp_create_post`, `wp_update_post`) throw a security exception. To enable write operations:
-   ```bash
-   node dist/index.js --path /path/to/site --allow-write
-   ```
-2. **Sanitization**:
-   All string parameters are stripped of malicious control characters and null bytes prior to dispatch.
-3. **Audit Log**:
-   Pass `--audit-log /path/to/audit.log` to record every single agent invocation with timestamps.
-
----
-
-## 🧪 Running Tests
-
-Run the built-in test suite against your local WordPress site:
+### B. Claude Code CLI
 
 ```bash
-npm test
+# For Local Sites
+claude mcp add wp-local node /absolute/path/to/wordpress-mcp/dist/index.js -- --path "/path/to/site" --adapter cli
+
+# For Remote Sites
+claude mcp add wp-live node /absolute/path/to/wordpress-mcp/dist/index.js -- --adapter rest --url "https://your-site.com" --username "your_user" --password "xxxx xxxx xxxx xxxx"
 ```
 
 ---
 
-<div dir="rtl">
+### C. Google Antigravity
 
-# راهنمای فارسی
+Add to `~/.gemini/config/mcp_config.json`:
+```json
+{
+  "mcpServers": {
+    "wordpress": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/wordpress-mcp/dist/index.js",
+        "--adapter", "rest",
+        "--url", "https://your-site.com",
+        "--username", "your_user",
+        "--password", "xxxx xxxx xxxx xxxx"
+      ]
+    }
+  }
+}
+```
 
-### 💡 این پروژه چیست؟
-این پروژه یک سرور استاندارد بر پایه پروتکل **MCP (Model Context Protocol)** است که وبسایت‌های وردپرسی را به عنوان یک منبع داده و جعبه‌ابزار هوشمند به ایجنت‌های هوش مصنوعی نظیر **Cursor**، **Claude Code** و **Google Antigravity** متصل می‌کند.
+---
 
-### 🛡 چرا امنیت آن تضمین شده است؟
-- **عدم امکان اجرای کدهای خام (No Eval / No Raw SQL):** هیچ ابزاری برای اجرای مستقیم کد PHP یا دستورات خام SQL در این سرور وجود ندارد. تمام ارتباطات از طریق متدهای امن و استاندارد وردپرس یا WP-CLI انجام می‌شود.
-- **حالت امن پیش‌فرض (Safe Mode):** سرور به‌صورت پیش‌فرض در حالت Read-Only (فقط خواندنی) اجرا می‌شود تا هیچ ایجنتی نتواند بدون اجازه شما پستی را ویرایش یا ایجاد کند. برای اجازه نوشتن باید فلگ `--allow-write` داده شود.
-- **لاگین و مانیتورینگ:** امکان فعال‌سازی فایل لاگ برای رصد لحظه‌ای تمامی دستورات ارسال‌شده از سمت هوش مصنوعی.
+## 🎮 Interactive Web Playground
 
-### 🎯 کاربردهای عملیاتی
-1. **توسعه قالب و افزونه:** هوش مصنوعی بدون نیاز به حدس زدن، ساختار فیلدهای ACF و Custom Post Types سایت را می‌خواند و کدهای هماهنگ با دیتابیس سایت می‌نویسد.
-2. **سئو و بهینه‌سازی محتوا:** بررسی وضعیت مقالات، عنوان‌ها، تگ‌ها و فیلدهای متای سئو.
-3. **دیباگ هوشمند:** خواندن خطاهای فایل `debug.log` و ارائه راه‌حل برای ارورهای PHP و تداخل افزونه‌ها.
-4. **مدیریت افزونه‌ها:** بررسی افزونه‌های نیازمند آپدیت و گزارش وضعیت سلامت سایت.
+Need to verify tool responses or test connectivity before configuring your AI agent?
+Run the built-in visual tester:
 
-</div>
+```bash
+npm run dashboard
+```
+
+Then visit **`http://localhost:3300`** in your browser. You can execute tools with a single click, view raw JSON-RPC responses, switch sites, and toggle Safe Mode interactively.
+
+---
+
+## 🔒 Security Architecture
+
+1. **Safe Mode Enforcement**:
+   - Out of the box, `wordpress-mcp` is read-only.
+   - Any attempt to invoke `wp_create_post` or `wp_update_post` returns a clear security error.
+   - To permit write actions, pass `--allow-write` in your command args or set `SAFE_MODE=false`.
+2. **Dedicated Credentials**:
+   - Use WordPress Application Passwords that can be instantly revoked at any moment.
+3. **Audit Trail**:
+   - Pass `--audit-log /path/to/audit.log` to record every tool call with timestamps and arguments.
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+Please read our [Contributing Guide](CONTRIBUTING.md) and [Security Policy](SECURITY.md).
 
 ---
 
 ## 📄 License
-MIT License. Created with ❤️ by Ameeen.
+
+This project is licensed under the [MIT License](LICENSE).  
+Created with ❤️ by **Amin Zahed ([Ameeen](https://github.com/am333ni7y))**.

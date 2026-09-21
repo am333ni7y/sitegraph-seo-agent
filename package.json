@@ -14,17 +14,30 @@
     "dev": "tsc --watch",
     "test": "node dist/test-harness.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/am333ni7y/wordpress-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/am333ni7y/wordpress-mcp/issues"
+  },
+  "homepage": "https://github.com/am333ni7y/wordpress-mcp#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",
     "wordpress",
     "wp-cli",
     "claude",
+    "claude-code",
     "cursor",
+    "cursor-ai",
     "antigravity",
-    "ai-agent"
+    "ai-agents",
+    "rest-api",
+    "seo",
+    "content-engineering"
   ],
-  "author": "Ameeen",
+  "author": "Amin Zahed (Ameeen)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
