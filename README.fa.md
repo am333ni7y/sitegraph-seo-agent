@@ -4,6 +4,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-Protocol-purple.svg)](https://modelcontextprotocol.io/)
+[![Glama](https://glama.ai/mcp/servers/am333ni7y/wordpress-mcp/badges/score.svg)](https://glama.ai/mcp/servers/am333ni7y/wordpress-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/am333ni7y/wordpress-mcp.svg?style=social)](https://github.com/am333ni7y/wordpress-mcp)
 
