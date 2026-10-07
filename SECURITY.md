@@ -21,4 +21,4 @@ Content that agents read from your site may contain text written by others (comm
 
 ## Reporting a vulnerability
 
-Please do **not** open a public issue. Report it privately through [GitHub Security Advisories](https://github.com/am333ni7y/wordpress-mcp/security/advisories/new) with steps to reproduce. You will get an acknowledgement within 72 hours.
+Please do **not** open a public issue. Report it privately through [GitHub Security Advisories](https://github.com/am333ni7y/sitegraph-seo-agent/security/advisories/new) with steps to reproduce. You will get an acknowledgement within 72 hours.

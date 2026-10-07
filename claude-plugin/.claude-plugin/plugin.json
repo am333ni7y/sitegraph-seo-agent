@@ -1,13 +1,33 @@
 {
   "name": "sitegraph-seo",
-  "version": "0.1.0",
+  "displayName": "SiteGraph SEO",
+  "version": "0.2.0",
   "description": "Audit a WordPress site with SiteGraph SEO Agent, explain which pages are weak and why, and fix internal links and search snippets as reviewable changesets with undo and redo.",
   "author": {
     "name": "Amin Zahed",
     "url": "https://github.com/am333ni7y"
   },
-  "homepage": "https://github.com/am333ni7y/wordpress-mcp",
-  "repository": "https://github.com/am333ni7y/wordpress-mcp",
+  "homepage": "https://github.com/am333ni7y/sitegraph-seo-agent",
+  "repository": "https://github.com/am333ni7y/sitegraph-seo-agent",
+  "documentationUrl": "https://github.com/am333ni7y/sitegraph-seo-agent#readme",
+  "supportUrl": "https://github.com/am333ni7y/sitegraph-seo-agent/issues",
+  "privacyPolicyUrl": "https://github.com/am333ni7y/sitegraph-seo-agent/blob/main/PRIVACY.md",
+  "icon": "./icon.png",
   "license": "MIT",
-  "keywords": ["wordpress", "seo", "internal-links", "mcp", "search-console"]
+  "keywords": ["wordpress", "seo", "internal-links", "search-console", "content"],
+  "userConfig": {
+    "mcp_url": {
+      "type": "string",
+      "title": "SiteGraph MCP URL",
+      "description": "Your site's SiteGraph endpoint, shown in wp-admin under SiteGraph SEO → Connect an agent, e.g. https://example.com/wp-json/sitegraph/v1/mcp",
+      "required": true
+    },
+    "access_token": {
+      "type": "string",
+      "title": "Access token",
+      "description": "The access token generated under SiteGraph SEO → Connect an agent. It is a WordPress Application Password you can revoke at any time.",
+      "required": true,
+      "sensitive": true
+    }
+  }
 }

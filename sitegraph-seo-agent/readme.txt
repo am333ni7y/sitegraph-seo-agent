@@ -4,7 +4,7 @@ Tags: seo, internal links, mcp, ai agent, search console
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -38,7 +38,7 @@ Agents never edit content directly. Every change is proposed as a changeset with
 2. Upload `sitegraph-seo-agent` to `/wp-content/plugins/` and activate it.
 3. Open **SiteGraph SEO** in wp-admin and click **Scan site**.
 4. Optional: upload the Pages CSV from Search Console on the Overview screen.
-5. Open **Connect an agent** and run the generated command to connect Claude Code.
+5. Open **Connect an agent**, click **Generate a connection**, and enter the MCP URL and access token in the SiteGraph SEO plugin for Claude Code (or use the claude mcp add command shown there).
 
 == Frequently Asked Questions ==
 
@@ -55,6 +55,10 @@ Users with the `edit_others_posts` capability (Editors and Administrators). Each
 In your SEO plugin's fields when Yoast SEO, Rank Math or SEOPress is active. Otherwise SiteGraph stores them and prints the meta description and title tag itself.
 
 == Changelog ==
+
+= 0.1.1 =
+* Connect screen shows the MCP URL and access token for the SiteGraph SEO plugin for Claude Code.
+* Project renamed to sitegraph-seo-agent on GitHub.
 
 = 0.1.0 =
 * First release: link graph, page scores, action plan, link suggestions, Search Console import, changesets with undo and redo, MCP server, wp-admin screens.

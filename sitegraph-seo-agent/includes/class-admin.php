@@ -745,23 +745,24 @@ class Admin {
 
 		echo '<div class="sg-card"><div class="sg-card-head"><h2>MCP endpoint</h2></div><p><code class="sg-code-block">' . esc_html( $endpoint ) . '</code></p>';
 		echo '<p>The agent acts as <strong>your WordPress user</strong>, with your permissions. Reads and proposals change nothing; applying, undoing and redoing are marked as destructive so MCP clients ask for confirmation first.</p>';
-		echo self::button_form( 'connect', array(), 'Generate a connection for Claude Code', 'button button-primary' ); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo self::button_form( 'connect', array(), 'Generate a connection', 'button button-primary' ); // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<p class="sg-muted">Creates an Application Password named “SiteGraph agent” that you can revoke any time under Users → Profile.</p></div></div>';
 
 		if ( $connection ) {
 			$user  = wp_get_current_user()->user_login;
 			$token = base64_encode( $user . ':' . $connection ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 			echo '<div class="sg-card sg-secret"><div class="sg-card-head"><h2>Your connection (shown once)</h2></div>';
-			echo '<p>Run this in a terminal to add the server to Claude Code:</p>';
+			echo '<p><strong>With the SiteGraph SEO plugin for Claude:</strong> paste these two values when Claude Code asks for them.</p>';
+			echo '<p>MCP URL</p><pre class="sg-code-block">' . esc_html( $endpoint ) . '</pre>';
+			echo '<p>Access token</p><pre class="sg-code-block">' . esc_html( $token ) . '</pre>';
+			echo '<p><strong>Without the plugin:</strong> add the server yourself.</p>';
 			echo '<pre class="sg-code-block">claude mcp add --transport http sitegraph ' . esc_html( $endpoint ) . ' --header "Authorization: Basic ' . esc_html( $token ) . '"</pre>';
-			echo '<p>Or put this in a project’s <code>.mcp.json</code>:</p>';
-			echo '<pre class="sg-code-block">' . esc_html( wp_json_encode( array( 'mcpServers' => array( 'sitegraph' => array( 'type' => 'http', 'url' => $endpoint, 'headers' => array( 'Authorization' => 'Basic ' . $token ) ) ) ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) ) . '</pre>';
-			echo '<p class="sg-muted">Treat this like a password. If it leaks, revoke the Application Password.</p></div>';
+			echo '<p class="sg-muted">Treat the token like a password. If it leaks, revoke the Application Password.</p></div>';
 		}
 
-		echo '<div class="sg-card"><div class="sg-card-head"><h2>Add the SiteGraph skills to Claude Code</h2></div>';
-		echo '<p>The skills teach Claude the audit → plan → propose → review → apply workflow, including when to stop and ask you.</p>';
-		echo '<pre class="sg-code-block">/plugin marketplace add am333ni7y/wordpress-mcp' . "\n" . '/plugin install sitegraph-seo@sitegraph</pre>';
+		echo '<div class="sg-card"><div class="sg-card-head"><h2>Install the SiteGraph SEO plugin for Claude Code</h2></div>';
+		echo '<p>It connects Claude to this site and adds skills for the audit → plan → propose → review → apply workflow, including when to stop and ask you. Claude Code asks for the MCP URL and access token above when you enable it.</p>';
+		echo '<pre class="sg-code-block">/plugin marketplace add am333ni7y/sitegraph-seo-agent' . "\n" . '/plugin install sitegraph-seo@sitegraph</pre>';
 		echo '<p>Then ask: <code>Audit my site with SiteGraph and tell me the five changes that would help most.</code></p></div>';
 	}
 }

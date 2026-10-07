@@ -2,7 +2,7 @@
 
 **Find the pages that are holding your WordPress site back, get a prioritized plan to fix them, and let Claude do the fixing — with a diff you approve and one-click undo.**
 
-[![CI](https://github.com/am333ni7y/wordpress-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/am333ni7y/wordpress-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/am333ni7y/sitegraph-seo-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/am333ni7y/sitegraph-seo-agent/actions/workflows/ci.yml)
 ![WordPress 6.9+](https://img.shields.io/badge/WordPress-6.9%2B-21759b?logo=wordpress)
 ![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php)
 ![MCP](https://img.shields.io/badge/MCP-Abilities%20API%20%2B%20MCP%20Adapter-7057ff)
@@ -150,26 +150,24 @@ Copy the [`sitegraph-seo-agent`](sitegraph-seo-agent) folder to `wp-content/plug
 
 Search Console → **Performance → Search results** → pick a date range → **Export → Download CSV**. Upload `Pages.csv` from the zip on the SiteGraph Overview screen.
 
-### 3. Connect Claude Code
+### 3. Generate a connection
 
-Open **SiteGraph SEO → Connect an agent** and click **Generate a connection for Claude Code**. It creates a revocable Application Password and shows a ready command once:
-
-```bash
-claude mcp add --transport http sitegraph https://your-site.com/wp-json/sitegraph/v1/mcp --header "Authorization: Basic <generated>"
-```
+Open **SiteGraph SEO → Connect an agent** and click **Generate a connection**. It creates a revocable Application Password and shows, once, the **MCP URL** and an **access token**.
 
 ![Connect screen with requirement checks, MCP endpoint and Claude Code setup](docs/screenshots/connect.png)
 
-### 4. Install the SiteGraph skills
+### 4. Install the SiteGraph SEO plugin for Claude Code
 
-The skills teach Claude the workflow: audit → plan → propose → review → apply, and when to stop and ask you. In Claude Code:
+The [Claude plugin](claude-plugin) connects Claude to your site and adds skills for the workflow: audit → plan → propose → review → apply, and when to stop and ask you. In Claude Code:
 
 ```text
-/plugin marketplace add am333ni7y/wordpress-mcp
+/plugin marketplace add am333ni7y/sitegraph-seo-agent
 /plugin install sitegraph-seo@sitegraph
 ```
 
-Then ask: *"Audit my site with SiteGraph and tell me the five changes that would help most."*
+Claude Code asks for the MCP URL and access token when you enable it; the token goes to your system's secure credential store. Then ask: *"Audit my site with SiteGraph and tell me the five changes that would help most."*
+
+Prefer to connect without the plugin? The Connect screen also shows a ready `claude mcp add --transport http sitegraph <MCP URL> --header "Authorization: Basic <token>"` command.
 
 | Skill | Use it for |
 |---|---|
@@ -240,7 +238,7 @@ Scores of 0–39 are *critical*, 40–59 *weak*, 60–79 *fair*, 80–100 *good*
 - **Exact, conflict-safe undo.** Changesets store the exact before/after of every field. Undo and redo refuse when content changed in the meantime and name the newer changeset that touched it; `force` exists but the skills only use it after you explicitly agree.
 - **History.** Who proposed, applied, undid and redid what, and when. WordPress revisions are still created as usual.
 
-See [SECURITY.md](SECURITY.md).
+See [SECURITY.md](SECURITY.md) and the [privacy policy](PRIVACY.md): SiteGraph has no server of its own, sends no telemetry, and the author receives no data.
 
 ---
 
@@ -278,11 +276,12 @@ CI runs the same suite on every push against the latest WordPress with SQLite an
 
 ```
 sitegraph-seo-agent/   WordPress plugin (abilities, MCP server, admin screens)
-claude-plugin/         Claude Code plugin: SiteGraph skills
-.claude-plugin/        Marketplace manifest (/plugin marketplace add am333ni7y/wordpress-mcp)
+claude-plugin/         Claude Code plugin: skills + MCP connection (userConfig)
+.claude-plugin/        Marketplace manifest (/plugin marketplace add am333ni7y/sitegraph-seo-agent)
 demo/                  Demo site seed, Search Console sample, sample changesets
 tests/                 Integration suite, test installer, php -S router
 docs/screenshots/      Images used in this README
+PRIVACY.md             Privacy policy (also linked from the Claude plugin)
 ```
 
 The earlier Node.js `wordpress-mcp` server (generic post CRUD over WP-CLI/REST) is preserved in the git history before this release.

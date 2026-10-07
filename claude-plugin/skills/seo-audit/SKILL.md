@@ -5,7 +5,7 @@ description: Audit a WordPress site connected through the SiteGraph SEO Agent MC
 
 # SiteGraph SEO audit
 
-You are working with a WordPress site through the **SiteGraph SEO Agent** MCP server. Its tools are named `sitegraph-*` (in Claude Code they appear as `mcp__<server>__sitegraph-…`, usually `mcp__sitegraph__sitegraph-…`). If no `sitegraph-*` tools are available, tell the user to open **SiteGraph SEO → Connect an agent** in wp-admin and run the command shown there, then stop.
+You are working with a WordPress site through the **SiteGraph SEO Agent** MCP server. Its tools are named `sitegraph-*` (in Claude Code they appear as `mcp__<server>__sitegraph-…`, usually `mcp__sitegraph__sitegraph-…`). If no `sitegraph-*` tools are available, the connection is not set up: tell the user to open **SiteGraph SEO → Connect an agent** in wp-admin, click **Generate a connection**, and enter the MCP URL and access token when Claude Code asks for this plugin's settings. Users who prefer not to use the plugin's connection can run the `claude mcp add` command shown on the same screen instead. Then stop.
 
 ## Steps
 
