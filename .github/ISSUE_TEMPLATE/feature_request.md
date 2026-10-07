@@ -1,19 +1,19 @@
 ---
 name: Feature request
-about: Suggest an idea for wordpress-mcp
+about: Suggest a check, tool, operation or workflow for SiteGraph SEO Agent
 title: '[FEAT] '
 labels: 'enhancement'
 assignees: ''
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is.
+**The problem**
+What are you trying to find out or fix on your site?
 
-**Describe the solution you'd like**
-A clear and concise description of what tool or feature you want added.
+**The solution you'd like**
+A new issue check, MCP tool, changeset operation, screen or skill. If it changes content, describe what undo should restore.
 
-**Describe alternatives you've considered**
-Any other approaches or workarounds considered.
+**Alternatives you've considered**
+Other tools or workarounds you use today.
 
 **Additional context**
-Add any other context or screenshots about the feature request here.
+Screenshots, examples or links.

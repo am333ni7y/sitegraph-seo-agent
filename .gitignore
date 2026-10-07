@@ -1,4 +1,6 @@
-node_modules/
 .DS_Store
-.env
+Thumbs.db
 *.log
+.env
+/vendor/
+/node_modules/

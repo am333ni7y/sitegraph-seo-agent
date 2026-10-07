@@ -7,24 +7,73 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  lint:
+    name: PHP ${{ matrix.php }} lint
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-
+        php: [ "7.4", "8.1", "8.3" ]
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: none
+      - name: Lint
+        run: find sitegraph-seo-agent demo tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+  integration:
+    name: Integration (WordPress latest + SQLite + MCP Adapter)
+    runs-on: ubuntu-latest
+    env:
+      WP_DIR: /tmp/wordpress
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_sqlite, sqlite3, mbstring, intl
+          tools: none
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Download WordPress, SQLite integration and MCP Adapter
+        run: |
+          curl -sSL https://wordpress.org/latest.zip -o /tmp/wp.zip
+          unzip -q /tmp/wp.zip -d /tmp
+          curl -sSL https://downloads.wordpress.org/plugin/sqlite-database-integration.latest-stable.zip -o /tmp/sqlite.zip
+          unzip -q /tmp/sqlite.zip -d "$WP_DIR/wp-content/plugins"
+          MCP_URL=$(curl -sSL "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=mcp-adapter" | php -r 'echo json_decode(stream_get_contents(STDIN))->download_link;')
+          curl -sSL "$MCP_URL" -o /tmp/mcp-adapter.zip
+          unzip -q /tmp/mcp-adapter.zip -d "$WP_DIR/wp-content/plugins"
+          ln -s "$GITHUB_WORKSPACE/sitegraph-seo-agent" "$WP_DIR/wp-content/plugins/sitegraph-seo-agent"
 
-    - name: Build TypeScript
-      run: npm run build
+      - name: Configure WordPress
+        run: |
+          SQLITE="$WP_DIR/wp-content/plugins/sqlite-database-integration"
+          sed -e "s#{SQLITE_IMPLEMENTATION_FOLDER_PATH}#$SQLITE#" -e "s#{SQLITE_PLUGIN}#sqlite-database-integration/load.php#" "$SQLITE/db.copy" > "$WP_DIR/wp-content/db.php"
+          cat > "$WP_DIR/wp-config.php" <<'PHP'
+          <?php
+          define( 'DB_NAME', 'wordpress' ); define( 'DB_USER', '' ); define( 'DB_PASSWORD', '' ); define( 'DB_HOST', '' );
+          define( 'DB_CHARSET', 'utf8mb4' ); define( 'DB_COLLATE', '' );
+          define( 'DB_DIR', __DIR__ . '/wp-content/database/' ); define( 'DB_FILE', '.ht.sqlite' );
+          foreach ( array( 'AUTH_KEY', 'SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'NONCE_KEY', 'AUTH_SALT', 'SECURE_AUTH_SALT', 'LOGGED_IN_SALT', 'NONCE_SALT' ) as $k ) { define( $k, 'ci-only-' . $k ); }
+          $table_prefix = 'wp_';
+          define( 'WP_ENVIRONMENT_TYPE', 'local' );
+          define( 'WP_DEBUG', true ); define( 'WP_DEBUG_LOG', true ); define( 'WP_DEBUG_DISPLAY', false );
+          define( 'WP_HOME', 'http://localhost:8080' ); define( 'WP_SITEURL', 'http://localhost:8080' );
+          define( 'DISABLE_WP_CRON', true );
+          if ( ! defined( 'ABSPATH' ) ) { define( 'ABSPATH', __DIR__ . '/' ); }
+          require_once ABSPATH . 'wp-settings.php';
+          PHP
+
+      - name: Install
+        run: php tests/install-wordpress.php "$WP_DIR"
+
+      - name: Seed the demo site
+        run: php demo/seed-demo-site.php "$WP_DIR" --yes-wipe
+
+      - name: Run integration tests
+        run: php tests/run-integration.php "$WP_DIR"
+
+      - name: Fail on PHP notices or warnings
+        run: |
+          if [ -s "$WP_DIR/wp-content/debug.log" ]; then cat "$WP_DIR/wp-content/debug.log"; exit 1; fi

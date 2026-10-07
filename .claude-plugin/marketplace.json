@@ -1,0 +1,14 @@
+{
+  "name": "sitegraph",
+  "description": "SiteGraph SEO Agent: find weak WordPress pages and fix them with reviewable, undoable changesets.",
+  "owner": {
+    "name": "Amin Zahed"
+  },
+  "plugins": [
+    {
+      "name": "sitegraph-seo",
+      "source": "./claude-plugin",
+      "description": "Skills that run a SiteGraph SEO audit, build an action plan, and fix internal links and search snippets on WordPress with review, undo and redo."
+    }
+  ]
+}

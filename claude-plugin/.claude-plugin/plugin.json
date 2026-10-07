@@ -1,0 +1,13 @@
+{
+  "name": "sitegraph-seo",
+  "version": "0.1.0",
+  "description": "Audit a WordPress site with SiteGraph SEO Agent, explain which pages are weak and why, and fix internal links and search snippets as reviewable changesets with undo and redo.",
+  "author": {
+    "name": "Amin Zahed",
+    "url": "https://github.com/am333ni7y"
+  },
+  "homepage": "https://github.com/am333ni7y/wordpress-mcp",
+  "repository": "https://github.com/am333ni7y/wordpress-mcp",
+  "license": "MIT",
+  "keywords": ["wordpress", "seo", "internal-links", "mcp", "search-console"]
+}

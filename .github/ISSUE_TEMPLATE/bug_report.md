@@ -1,28 +1,29 @@
 ---
 name: Bug report
-about: Create a report to help us improve wordpress-mcp
+about: Something in SiteGraph SEO Agent does not work as expected
 title: '[BUG] '
 labels: 'bug'
 assignees: ''
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**What happened**
+A clear description of the problem.
 
-**WordPress Environment**
- - Adapter: [e.g. CLI or REST]
- - WordPress Version: [e.g. 6.7]
- - PHP Version: [e.g. 8.2]
- - Client: [e.g. Claude Code, Cursor, Antigravity]
+**Environment**
+- SiteGraph SEO Agent version:
+- WordPress version:
+- PHP version:
+- MCP Adapter version:
+- SEO plugin (Yoast, Rank Math, SEOPress, none):
+- Client (wp-admin, Claude Code, other MCP client):
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Call tool '...'
+**Steps to reproduce**
+1. Call tool / click '...'
 2. With arguments '...'
 3. See error
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+What you expected to happen.
 
-**Logs / Screenshots**
-If applicable, add console output or audit logs.
+**Details**
+Tool output, the changeset ID if a change was involved, and any lines from `wp-content/debug.log`. Remove credentials and private content before posting.
