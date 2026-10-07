@@ -6,7 +6,7 @@
  * Version:           0.1.0
  * Requires at least: 6.9
  * Requires PHP:      7.4
- * Author:            Amin Zahed
+ * Author:            Amin Zahed (AMEEEN ZED) AMEEEN.IR
  * Author URI:        https://github.com/am333ni7y
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
