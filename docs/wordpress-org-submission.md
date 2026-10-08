@@ -56,8 +56,10 @@ Facts below were checked against the files named in each section. Items that cou
 1. Build the zip from the committed state (PowerShell or Git Bash, from the repo root):
 
    ```
-   git archive --format=zip --prefix=sitegraph-seo-agent/ -o ..\sitegraph-seo-agent-0.1.1.zip HEAD:sitegraph-seo-agent
+   git -c core.autocrlf=false archive --format=zip --prefix=sitegraph-seo-agent/ -o ../sitegraph-seo-agent-0.1.1.zip HEAD:sitegraph-seo-agent
    ```
+
+   Keep `-c core.autocrlf=false`: this Windows clone has `core.autocrlf=true`, and without the override `git archive` writes CRLF line endings into the zip. The committed files are LF; check that the zip has no `\r` bytes.
 
    This packages only the plugin folder (`readme.txt`, main file, `includes/`, `assets/`, `uninstall.php`) under a top-level `sitegraph-seo-agent/` directory. `tests/`, `demo/`, `claude-plugin/` and `.wordpress-org/` stay out. Open the zip once and check the top-level folder name and that `readme.txt` has the real Contributors username.
 2. Log in and upload at https://wordpress.org/plugins/developers/add/ with a short description of what the plugin does.
