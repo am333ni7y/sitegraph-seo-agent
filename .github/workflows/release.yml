@@ -21,7 +21,7 @@ jobs:
       SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
       SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Check versions match
         run: |
@@ -37,7 +37,7 @@ jobs:
       - name: Build zip
         run: zip -rq sitegraph-seo-agent.zip sitegraph-seo-agent -x '*.DS_Store' '*Thumbs.db'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sitegraph-seo-agent
           path: sitegraph-seo-agent.zip
