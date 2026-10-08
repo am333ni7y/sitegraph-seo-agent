@@ -1,6 +1,6 @@
 # WordPress.org submission guide: SiteGraph SEO Agent 0.1.1
 
-Status: prepared, NOT submitted. Nothing has been uploaded, tagged or released.
+Status: submitted to WordPress.org on 2026-10-08 from the `ameeenity` account (zip built from commit `df30240`). Initial slug `sitegraph-seo-agent`, automated plugin scan: Pass, review status: Awaiting Review. Nothing has been tagged or released on GitHub yet.
 Repo: github.com/am333ni7y/sitegraph-seo-agent (branch `main`). Plugin folder: `sitegraph-seo-agent/`.
 Facts below were checked against the files named in each section. Items that could not be verified from files are marked "unverified".
 
@@ -63,7 +63,8 @@ Facts below were checked against the files named in each section. Items that cou
 
    This packages only the plugin folder (`readme.txt`, main file, `includes/`, `assets/`, `uninstall.php`) under a top-level `sitegraph-seo-agent/` directory. `tests/`, `demo/`, `claude-plugin/` and `.wordpress-org/` stay out. Open the zip once and check the top-level folder name and that `readme.txt` has the real Contributors username.
 2. Log in and upload at https://wordpress.org/plugins/developers/add/ with a short description of what the plugin does.
-3. Wait for the review email. The docs say the code is reviewed "within 14 business days" of being queued; the actual time varies.
+3. Wait for the review email (subject "[WordPress Plugin Directory] Review in Progress: SiteGraph SEO Agent"). The submission page says reviews take between 1 and 10 days and the team aims for 5 business days; the actual time varies with the queue.
+4. Do not resubmit to fix a mistake: reply to the automated email instead. Updated zips go through "Upload updated plugin for review" on https://wordpress.org/plugins/developers/add/ while the review is open.
 
 ### What reviewers commonly ask about
 Only items the official plugin guidelines and developer handbook cover; they are all relevant here:
