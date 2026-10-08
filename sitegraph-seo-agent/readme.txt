@@ -1,5 +1,5 @@
 === SiteGraph SEO Agent ===
-Contributors: aminzahed
+Contributors: ameeenity
 Tags: seo, internal links, search console, ai agent, mcp
 Requires at least: 6.9
 Tested up to: 7.1

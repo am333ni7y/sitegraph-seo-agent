@@ -7,7 +7,7 @@ Facts below were checked against the files named in each section. Items that cou
 ## 1. Pre-submission checklist
 
 - [ ] **WordPress.org account** exists, with an email address you check regularly. Whitelist `plugins@wordpress.org` so review emails arrive (per developer.wordpress.org "Planning, submitting and maintaining plugins").
-- [ ] **Contributors username is real.** `sitegraph-seo-agent/readme.txt` line 2 currently says `Contributors: aminzahed`. This is a placeholder awaiting the owner's answer. Replace it with the exact WordPress.org username (comma-separated if several) before building the zip. FLAG: do not submit until confirmed.
+- [x] **Contributors username is real.** `sitegraph-seo-agent/readme.txt` line 2 says `Contributors: ameeenity`, the owner's WordPress.org account (confirmed 2026-10-08).
 - [ ] **Version agreement.** Verified: `sitegraph-seo-agent.php` header `Version: 0.1.1`, constant `SITEGRAPH_VERSION` `0.1.1`, `readme.txt` `Stable tag: 0.1.1`, changelog top entry `= 0.1.1 =`. All match. `release.yml` also fails the build if header and Stable tag differ, or if the release tag (minus `v`) differs.
 - [ ] **Compatibility headers match.** Header and readme both say `Requires at least: 6.9`, `Requires PHP: 7.4`, `License: MIT`. `readme.txt` says `Tested up to: 7.1`. Verified 2026-10-08: the local test site runs WordPress 7.1.3, and `api.wordpress.org/core/version-check/1.7/` lists 7.1.3 as the current release.
 - [ ] **Plugin Check clean.** CI job `plugin-check` (`wordpress/plugin-check-action@v1`, `build-dir: ./sitegraph-seo-agent`) in `.github/workflows/ci.yml`. Verified locally on 2026-10-08 with Plugin Check 2.1.0 on WordPress 7.1.3: `Success: Checks complete. No errors found.` Re-run after any later change.
@@ -142,6 +142,5 @@ Only items the official plugin guidelines and developer handbook cover; they are
 
 ## 5. Open items for the owner
 
-1. Real WordPress.org username for `Contributors` (placeholder `aminzahed` in `readme.txt`).
-2. Decide on a dedicated Plugin URI landing page (decision f) before building the zip.
-3. Re-run the integration tests and Plugin Check (locally and in CI) after any of the above changes, then rebuild the zip.
+1. Decide on a dedicated Plugin URI landing page (decision f); it can also change in a later release.
+2. Re-run the integration tests and Plugin Check (locally and in CI) after any of the above changes, then rebuild the zip.
