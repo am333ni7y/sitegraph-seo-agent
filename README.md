@@ -2,6 +2,8 @@
 
 **Find the pages that are holding your WordPress site back, get a prioritized plan to fix them, and let Claude do the fixing — with a diff you approve and one-click undo.**
 
+Made by **[AMEEEN ZED](https://aminzahed.ir/)** · Part of **[WP Needs](https://wp-needs.com/)** — WordPress plugins, themes and support
+
 [![CI](https://github.com/am333ni7y/sitegraph-seo-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/am333ni7y/sitegraph-seo-agent/actions/workflows/ci.yml)
 ![WordPress 6.9+](https://img.shields.io/badge/WordPress-6.9%2B-21759b?logo=wordpress)
 ![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php)
@@ -286,6 +288,12 @@ PRIVACY.md             Privacy policy (also linked from the Claude plugin)
 
 The earlier Node.js `wordpress-mcp` server (generic post CRUD over WP-CLI/REST) is preserved in the git history before this release.
 
+## About
+
+SiteGraph SEO Agent is made by **AMEEEN ZED** — SEO specialist and WordPress developer. Website design and SEO services: **[aminzahed.ir](https://aminzahed.ir/)**.
+
+It is part of **[WP Needs](https://wp-needs.com/)**, a marketplace for WordPress plugins, themes and technical support.
+
 ## License
 
-[MIT](LICENSE) © Amin Zahed
+[MIT](LICENSE) © [AMEEEN ZED](https://aminzahed.ir/)

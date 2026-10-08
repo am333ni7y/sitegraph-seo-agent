@@ -18,6 +18,10 @@ use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Changesets {
 
 	const OPERATION_TYPES = array( 'add_internal_link', 'replace_text', 'set_post_title', 'set_seo_title', 'set_meta_description' );
@@ -445,7 +449,7 @@ class Changesets {
 	private static function newer_changesets( $id, $post_id ) {
 		global $wpdb;
 		$table = Installer::table( 'changesets' );
-		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT id, fields FROM $table WHERE id > %d AND status = 'applied'", $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT id, fields FROM %i WHERE id > %d AND status = 'applied'", $table, $id ) );
 		$ids   = array();
 		foreach ( $rows as $row ) {
 			foreach ( (array) json_decode( $row->fields, true ) as $field ) {
@@ -515,7 +519,7 @@ class Changesets {
 	private static function load( $id ) {
 		global $wpdb;
 		$table = Installer::table( 'changesets' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ), ARRAY_A );
 		if ( ! $row ) {
 			return null;
 		}
@@ -609,10 +613,13 @@ class Changesets {
 	public static function list_changesets( $status = '', $limit = 20 ) {
 		global $wpdb;
 		$table = Installer::table( 'changesets' );
-		$where = '' !== $status ? $wpdb->prepare( 'WHERE status = %s', $status ) : '';
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, operations, fields, created_by, created_at, updated_at FROM $table $where ORDER BY id DESC LIMIT %d", max( 1, min( 100, (int) $limit ) ) ) );
-		$out  = array();
+		$limit = max( 1, min( 100, (int) $limit ) );
+		if ( '' !== $status ) {
+			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT id, title, status, operations, fields, created_by, created_at, updated_at FROM %i WHERE status = %s ORDER BY id DESC LIMIT %d', $table, $status, $limit ) );
+		} else {
+			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT id, title, status, operations, fields, created_by, created_at, updated_at FROM %i ORDER BY id DESC LIMIT %d', $table, $limit ) );
+		}
+		$out = array();
 		foreach ( $rows as $row ) {
 			$operations = (array) json_decode( $row->operations, true );
 			$fields     = (array) json_decode( $row->fields, true );

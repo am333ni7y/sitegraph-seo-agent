@@ -1,13 +1,13 @@
 {
   "name": "sitegraph-seo",
   "displayName": "SiteGraph SEO",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Audit a WordPress site with SiteGraph SEO Agent, explain which pages are weak and why, and fix internal links and search snippets as reviewable changesets with undo and redo.",
   "author": {
-    "name": "Amin Zahed (AMEEEN ZED) AMEEEN.IR",
-    "url": "https://github.com/am333ni7y"
+    "name": "AMEEEN ZED",
+    "url": "https://aminzahed.ir/"
   },
-  "homepage": "https://github.com/am333ni7y/sitegraph-seo-agent",
+  "homepage": "https://wp-needs.com/",
   "repository": "https://github.com/am333ni7y/sitegraph-seo-agent",
   "documentationUrl": "https://github.com/am333ni7y/sitegraph-seo-agent#readme",
   "supportUrl": "https://github.com/am333ni7y/sitegraph-seo-agent/issues",

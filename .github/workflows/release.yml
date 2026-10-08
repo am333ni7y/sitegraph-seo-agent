@@ -1,0 +1,57 @@
+name: Release
+
+# Publish a GitHub release with a tag such as v0.1.1 (it must match "Version" in
+# sitegraph-seo-agent.php and "Stable tag" in readme.txt). This workflow then:
+#   1. builds sitegraph-seo-agent.zip and attaches it to the release, and
+#   2. deploys the plugin and .wordpress-org assets to WordPress.org SVN, once the
+#      plugin is approved and the SVN_USERNAME / SVN_PASSWORD secrets are set.
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+      SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check versions match
+        run: |
+          HEADER=$(grep -Po '^\s*\*\s*Version:\s*\K[0-9.]+' sitegraph-seo-agent/sitegraph-seo-agent.php)
+          STABLE=$(grep -Po '^Stable tag:\s*\K[0-9.]+' sitegraph-seo-agent/readme.txt)
+          echo "Plugin header: $HEADER, readme stable tag: $STABLE"
+          test "$HEADER" = "$STABLE"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+            test "${TAG#v}" = "$HEADER"
+          fi
+
+      - name: Build zip
+        run: zip -rq sitegraph-seo-agent.zip sitegraph-seo-agent -x '*.DS_Store' '*Thumbs.db'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitegraph-seo-agent
+          path: sitegraph-seo-agent.zip
+
+      - name: Attach zip to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" sitegraph-seo-agent.zip --clobber
+
+      - name: Deploy to WordPress.org
+        if: github.event_name == 'release' && env.SVN_USERNAME != ''
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SLUG: sitegraph-seo-agent
+          BUILD_DIR: sitegraph-seo-agent
+          ASSETS_DIR: .wordpress-org

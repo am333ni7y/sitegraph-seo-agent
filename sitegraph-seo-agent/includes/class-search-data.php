@@ -12,6 +12,10 @@ use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Search_Data {
 
 	/**
@@ -27,7 +31,7 @@ class Search_Data {
 		$table = Installer::table( 'search' );
 
 		if ( 'replace' === $mode ) {
-			$wpdb->query( "DELETE FROM $table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) );
 		}
 
 		$map       = Link_Index::path_map();
@@ -161,7 +165,7 @@ class Search_Data {
 	public static function count() {
 		global $wpdb;
 		$table = Installer::table( 'search' );
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
 	}
 
 	public static function has_data() {
@@ -180,7 +184,7 @@ class Search_Data {
 		global $wpdb;
 		$table = Installer::table( 'search' );
 		$out   = array();
-		foreach ( $wpdb->get_results( "SELECT post_id, clicks, impressions, ctr, position FROM $table" ) as $row ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		foreach ( $wpdb->get_results( $wpdb->prepare( 'SELECT post_id, clicks, impressions, ctr, position FROM %i', $table ) ) as $row ) {
 			$out[ (int) $row->post_id ] = self::format_row( $row );
 		}
 		return $out;
@@ -189,7 +193,7 @@ class Search_Data {
 	public static function get( $post_id ) {
 		global $wpdb;
 		$table = Installer::table( 'search' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT clicks, impressions, ctr, position FROM $table WHERE post_id = %d", $post_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT clicks, impressions, ctr, position FROM %i WHERE post_id = %d', $table, $post_id ) );
 		return $row ? self::format_row( $row ) : null;
 	}
 

@@ -14,6 +14,10 @@ use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Abilities {
 
 	const CATEGORY = 'sitegraph-seo';
@@ -524,10 +528,8 @@ class Abilities {
 		}
 
 		$links = Installer::table( 'links' );
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$inbound = $wpdb->get_results( $wpdb->prepare( "SELECT source_id, anchor FROM $links WHERE target_id = %d AND status = 'ok'", $post_id ) );
-		$out     = $wpdb->get_results( $wpdb->prepare( "SELECT target_id, target_url, anchor, status FROM $links WHERE source_id = %d", $post_id ) );
-		// phpcs:enable
+		$inbound = $wpdb->get_results( $wpdb->prepare( "SELECT source_id, anchor FROM %i WHERE target_id = %d AND status = 'ok'", $links, $post_id ) );
+		$out     = $wpdb->get_results( $wpdb->prepare( 'SELECT target_id, target_url, anchor, status FROM %i WHERE source_id = %d', $links, $post_id ) );
 
 		$page['inbound_links'] = array_map(
 			function ( $row ) {

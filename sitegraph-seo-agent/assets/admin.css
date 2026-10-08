@@ -167,3 +167,6 @@
 .sg-code-block { display: block; background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
 .sg-secret { border-color: #fbbf24; }
 .sg-import { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sg-credits { margin: 8px 0 24px; color: var(--sg-muted); font-size: 12px; }
+.sg-credits a { color: inherit; }
+.sg-credits a:hover { color: var(--sg-accent); }

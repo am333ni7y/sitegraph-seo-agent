@@ -10,6 +10,10 @@ namespace SiteGraph;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Admin {
 
 	const SLUG = 'sitegraph';
@@ -37,9 +41,16 @@ class Admin {
 		'decision' => 'Needs your decision',
 	);
 
+	const WP_NEEDS_URL = 'https://wp-needs.com/';
+	const AUTHOR_URL   = 'https://aminzahed.ir/';
+	const DOCS_URL     = 'https://github.com/am333ni7y/sitegraph-seo-agent#readme';
+	const SUPPORT_URL  = 'https://github.com/am333ni7y/sitegraph-seo-agent/issues';
+
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( SITEGRAPH_FILE ), array( __CLASS__, 'action_links' ) );
+		add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
 		foreach ( array( 'scan', 'import', 'changeset', 'connect', 'propose_links' ) as $action ) {
 			add_action( 'admin_post_sitegraph_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
@@ -59,15 +70,44 @@ class Admin {
 		return add_query_arg( array_merge( array( 'page' => self::SLUG ), $args ), admin_url( 'admin.php' ) );
 	}
 
+	/**
+	 * External link tagged so the destination site can see it came from the plugin.
+	 */
+	private static function campaign_url( $url, $content ) {
+		return add_query_arg(
+			array(
+				'utm_source'   => 'sitegraph-seo-agent',
+				'utm_medium'   => 'wp-admin',
+				'utm_campaign' => 'plugin',
+				'utm_content'  => $content,
+			),
+			$url
+		);
+	}
+
+	public static function action_links( $links ) {
+		array_unshift( $links, '<a href="' . esc_url( self::url() ) . '">' . esc_html__( 'Open SiteGraph', 'sitegraph-seo-agent' ) . '</a>' );
+		return $links;
+	}
+
+	public static function row_meta( $links, $file ) {
+		if ( plugin_basename( SITEGRAPH_FILE ) !== $file ) {
+			return $links;
+		}
+		$links[] = '<a href="' . esc_url( self::DOCS_URL ) . '" target="_blank" rel="noopener">' . esc_html__( 'Documentation', 'sitegraph-seo-agent' ) . '</a>';
+		$links[] = '<a href="' . esc_url( self::SUPPORT_URL ) . '" target="_blank" rel="noopener">' . esc_html__( 'Support', 'sitegraph-seo-agent' ) . '</a>';
+		$links[] = '<a href="' . esc_url( self::campaign_url( self::WP_NEEDS_URL, 'plugins-screen' ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'WP Needs', 'sitegraph-seo-agent' ) . '</a>';
+		return $links;
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Form handlers                                                       */
 	/* ------------------------------------------------------------------ */
 
-	private static function guard( $action ) {
+	private static function require_capability() {
 		if ( ! Abilities::can_use() ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'sitegraph-seo-agent' ), 403 );
 		}
-		check_admin_referer( 'sitegraph_' . $action );
 	}
 
 	private static function notice( $type, $message ) {
@@ -80,7 +120,8 @@ class Admin {
 	}
 
 	public static function handle_scan() {
-		self::guard( 'scan' );
+		self::require_capability();
+		check_admin_referer( 'sitegraph_scan' );
 		$deadline = microtime( true ) + 40;
 		$result   = Link_Index::scan( 20, true );
 		while ( ! $result['done'] && microtime( true ) < $deadline ) {
@@ -91,7 +132,8 @@ class Admin {
 	}
 
 	public static function handle_import() {
-		self::guard( 'import' );
+		self::require_capability();
+		check_admin_referer( 'sitegraph_import' );
 		$file = isset( $_FILES['sitegraph_csv']['tmp_name'] ) ? $_FILES['sitegraph_csv']['tmp_name'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		if ( ! $file || ! is_uploaded_file( $file ) ) {
 			self::notice( 'error', 'Choose the Pages CSV exported from Search Console.' );
@@ -109,7 +151,8 @@ class Admin {
 	}
 
 	public static function handle_changeset() {
-		self::guard( 'changeset' );
+		self::require_capability();
+		check_admin_referer( 'sitegraph_changeset' );
 		$id   = isset( $_POST['changeset_id'] ) ? absint( $_POST['changeset_id'] ) : 0;
 		$verb = isset( $_POST['verb'] ) ? sanitize_key( $_POST['verb'] ) : '';
 		$map  = array(
@@ -143,7 +186,8 @@ class Admin {
 	}
 
 	public static function handle_propose_links() {
-		self::guard( 'propose_links' );
+		self::require_capability();
+		check_admin_referer( 'sitegraph_propose_links' );
 		$target  = isset( $_POST['target_post_id'] ) ? absint( $_POST['target_post_id'] ) : 0;
 		$picks   = isset( $_POST['links'] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['links'] ) ) : array();
 		$ops     = array();
@@ -188,7 +232,8 @@ class Admin {
 	}
 
 	public static function handle_connect() {
-		self::guard( 'connect' );
+		self::require_capability();
+		check_admin_referer( 'sitegraph_connect' );
 		if ( ! wp_is_application_passwords_available_for_user( wp_get_current_user() ) ) {
 			self::notice( 'error', 'Application Passwords are not available on this site. They require HTTPS, or a local environment.' );
 			self::back( array( 'tab' => 'connect' ) );
@@ -302,6 +347,16 @@ class Admin {
 	}
 
 	/**
+	 * Text without tags, keeping the leading and trailing space that separates it from the link.
+	 */
+	private static function plain( $html ) {
+		$text = wp_strip_all_tags( $html );
+		$lead = preg_match( '/^\s/u', $html ) ? ' ' : '';
+		$tail = preg_match( '/\s$/u', $html ) ? ' ' : '';
+		return $lead . $text . $tail;
+	}
+
+	/**
 	 * Before/after for a new link: the anchor text is highlighted, and the link
 	 * is rendered as a link with its destination, rather than as raw HTML.
 	 */
@@ -318,8 +373,15 @@ class Admin {
 		$path = wp_parse_url( html_entity_decode( $m[2] ), PHP_URL_PATH );
 		return array(
 			$mark( $before ),
-			esc_html( strip_tags( $m[1] ) ) . '<ins class="sg-new-link">' . esc_html( $m[3] ) . '</ins><span class="sg-link-target">→ ' . esc_html( $path ? $path : $m[2] ) . '</span>' . esc_html( strip_tags( $m[4] ) ),
+			esc_html( self::plain( $m[1] ) ) . '<ins class="sg-new-link">' . esc_html( $m[3] ) . '</ins><span class="sg-link-target">→ ' . esc_html( $path ? $path : $m[2] ) . '</span>' . esc_html( self::plain( $m[4] ) ),
 		);
+	}
+
+	/**
+	 * SVG coordinate with one decimal and a dot separator, whatever the locale.
+	 */
+	private static function coord( $value ) {
+		return number_format( (float) $value, 1, '.', '' );
 	}
 
 	private static function logo() {
@@ -374,7 +436,29 @@ class Admin {
 		} else {
 			call_user_func( array( __CLASS__, 'render_' . $tab ) );
 		}
-		echo '</div></div>';
+		echo '</div>';
+		self::render_credits();
+		echo '</div>';
+	}
+
+	private static function render_credits() {
+		/**
+		 * Filters whether the credits line is shown at the bottom of SiteGraph's own admin screen.
+		 *
+		 * @param bool $show Whether to show the credits line. Default true.
+		 */
+		if ( ! apply_filters( 'sitegraph_show_credits', true ) ) {
+			return;
+		}
+		echo '<p class="sg-credits">';
+		echo esc_html( 'SiteGraph SEO Agent ' . SITEGRAPH_VERSION ) . ' · ';
+		/* translators: %s: author name linked to the author's website */
+		printf( esc_html__( 'Made by %s', 'sitegraph-seo-agent' ), '<a href="' . esc_url( self::campaign_url( self::AUTHOR_URL, 'credits' ) ) . '" target="_blank" rel="noopener">AMEEEN ZED</a>' );
+		echo ' · ';
+		/* translators: %s: "WP Needs" linked to wp-needs.com */
+		printf( esc_html__( 'Part of %s — WordPress plugins, themes and support', 'sitegraph-seo-agent' ), '<a href="' . esc_url( self::campaign_url( self::WP_NEEDS_URL, 'credits' ) ) . '" target="_blank" rel="noopener">WP Needs</a>' );
+		echo ' · <a href="' . esc_url( self::DOCS_URL ) . '" target="_blank" rel="noopener">' . esc_html__( 'Documentation', 'sitegraph-seo-agent' ) . '</a>';
+		echo '</p>';
 	}
 
 	private static function render_empty() {
@@ -443,11 +527,10 @@ class Admin {
 	}
 
 	private static function render_pages() {
-		// phpcs:disable WordPress.Security.NonceVerification
-		$issue     = isset( $_GET['issue'] ) ? sanitize_key( $_GET['issue'] ) : '';
-		$max_score = isset( $_GET['max_score'] ) ? absint( $_GET['max_score'] ) : 59;
-		$paged     = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
-		// phpcs:enable
+		// Read-only filter and paging parameters from the URL.
+		$issue     = isset( $_GET['issue'] ) ? sanitize_key( $_GET['issue'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$max_score = isset( $_GET['max_score'] ) ? absint( $_GET['max_score'] ) : 59; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$paged     = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$per_page = 25;
 		$result   = Page_Analyzer::list_pages(
 			array(
@@ -495,7 +578,7 @@ class Admin {
 	}
 
 	private static function render_page() {
-		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only navigation parameter.
 		$report  = Abilities::page_report( array( 'post_id' => $post_id ) );
 		if ( is_wp_error( $report ) ) {
 			echo '<div class="sg-card"><p>' . esc_html( $report->get_error_message() ) . '</p></div>';
@@ -590,10 +673,8 @@ class Admin {
 		global $wpdb;
 		$pages_table = Installer::table( 'pages' );
 		$links_table = Installer::table( 'links' );
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$nodes = $wpdb->get_results( "SELECT post_id, title, inbound, depth, score FROM $pages_table ORDER BY inbound DESC LIMIT 400" );
-		$edges = $wpdb->get_results( "SELECT DISTINCT source_id, target_id FROM $links_table WHERE status = 'ok' AND target_id > 0" );
-		// phpcs:enable
+		$nodes = $wpdb->get_results( $wpdb->prepare( 'SELECT post_id, title, inbound, depth, score FROM %i ORDER BY inbound DESC LIMIT 400', $pages_table ) );
+		$edges = $wpdb->get_results( $wpdb->prepare( "SELECT DISTINCT source_id, target_id FROM %i WHERE status = 'ok' AND target_id > 0", $links_table ) );
 
 		$size   = 760;
 		$center = $size / 2;
@@ -623,7 +704,7 @@ class Admin {
 			$a = (int) $edge->source_id;
 			$b = (int) $edge->target_id;
 			if ( isset( $pos[ $a ], $pos[ $b ] ) ) {
-				printf( '<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" class="sg-edge"/>', $pos[ $a ][0], $pos[ $a ][1], $pos[ $b ][0], $pos[ $b ][1] );
+				printf( '<line x1="%s" y1="%s" x2="%s" y2="%s" class="sg-edge"/>', esc_attr( self::coord( $pos[ $a ][0] ) ), esc_attr( self::coord( $pos[ $a ][1] ) ), esc_attr( self::coord( $pos[ $b ][0] ) ), esc_attr( self::coord( $pos[ $b ][1] ) ) );
 			}
 		}
 		echo '<text x="' . (int) $center . '" y="' . (int) ( $center + 26 ) . '" class="sg-home-label" text-anchor="middle">Home</text>';
@@ -631,11 +712,11 @@ class Admin {
 			$node   = $p[2];
 			$radius = 5 + min( 11, sqrt( (int) $node->inbound ) * 2.4 );
 			printf(
-				'<a href="%s"><circle cx="%.1f" cy="%.1f" r="%.1f" class="sg-node sg-grade-fill-%s"><title>%s</title></circle></a>',
+				'<a href="%s"><circle cx="%s" cy="%s" r="%s" class="sg-node sg-grade-fill-%s"><title>%s</title></circle></a>',
 				esc_url( self::url( array( 'tab' => 'page', 'post_id' => $id ) ) ),
-				$p[0],
-				$p[1],
-				$radius,
+				esc_attr( self::coord( $p[0] ) ),
+				esc_attr( self::coord( $p[1] ) ),
+				esc_attr( self::coord( $radius ) ),
 				esc_attr( Page_Analyzer::grade( (int) $node->score ) ),
 				esc_html( sprintf( '%s — score %d, %d links in, depth %s', $node->title, $node->score, $node->inbound, null === $node->depth ? 'unreachable' : $node->depth ) )
 			);
@@ -644,7 +725,7 @@ class Admin {
 	}
 
 	private static function render_changes() {
-		$id = isset( $_GET['changeset'] ) ? absint( $_GET['changeset'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		$id = isset( $_GET['changeset'] ) ? absint( $_GET['changeset'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only navigation parameter.
 		if ( $id ) {
 			self::render_changeset( $id );
 			return;

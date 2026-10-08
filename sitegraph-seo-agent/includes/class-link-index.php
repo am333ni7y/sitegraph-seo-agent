@@ -10,6 +10,10 @@ namespace SiteGraph;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Link_Index {
 
 	const STATE_OPTION     = 'sitegraph_scan_state';
@@ -54,8 +58,8 @@ class Link_Index {
 		global $wpdb;
 		$types        = self::post_types();
 		$placeholders = implode( ',', array_fill( 0, count( $types ), '%s' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ($placeholders)", $types ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders is a list of %s placeholders, one per post type.
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE post_status = 'publish' AND post_type IN ($placeholders)", array_merge( array( $wpdb->posts ), $types ) ) );
 	}
 
 	/**
@@ -79,8 +83,8 @@ class Link_Index {
 				'started_at' => time(),
 				'done'       => false,
 			);
-			$wpdb->query( "DELETE FROM $links" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->query( "DELETE FROM $pages" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $links ) );
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $pages ) );
 			self::flush_path_map();
 		}
 
@@ -90,9 +94,14 @@ class Link_Index {
 		$this_call    = 0;
 
 		while ( true ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$sql = $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ($placeholders) AND ID > %d ORDER BY ID ASC LIMIT %d", array_merge( $types, array( $state['cursor'], self::BATCH_SIZE ) ) );
-			$ids = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$ids = $wpdb->get_col(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- the replacements are passed as one array.
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a list of %s placeholders, one per post type.
+					"SELECT ID FROM %i WHERE post_status = 'publish' AND post_type IN ($placeholders) AND ID > %d ORDER BY ID ASC LIMIT %d",
+					array_merge( array( $wpdb->posts ), $types, array( $state['cursor'], self::BATCH_SIZE ) )
+				)
+			);
 
 			if ( empty( $ids ) ) {
 				self::refresh();
@@ -204,10 +213,9 @@ class Link_Index {
 		$pages = Installer::table( 'pages' );
 
 		// Links to content that is no longer published are broken now.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$live = array_map( 'intval', $wpdb->get_col( "SELECT post_id FROM $pages" ) );
+		$live = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i', $pages ) ) );
 		$live = array_flip( $live );
-		$rows = $wpdb->get_results( "SELECT id, source_id, target_id, status FROM $links WHERE status IN ('ok','broken')" );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, source_id, target_id, status FROM %i WHERE status IN ('ok','broken')", $links ) );
 
 		$inbound  = array();
 		$outbound = array();
@@ -241,7 +249,6 @@ class Link_Index {
 				array( 'post_id' => $post_id )
 			);
 		}
-		// phpcs:enable
 
 		Page_Analyzer::score_all();
 		update_option( self::LAST_SCAN_OPTION, time(), false );
@@ -388,7 +395,6 @@ class Link_Index {
 				'fields'           => 'ids',
 				'orderby'          => 'ID',
 				'order'            => 'ASC',
-				'suppress_filters' => true,
 			)
 		);
 		foreach ( $ids as $id ) {
@@ -443,8 +449,7 @@ class Link_Index {
 		$map   = self::path_map();
 		$adj   = array();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		foreach ( $wpdb->get_results( "SELECT source_id, target_id, target_url, status FROM $links WHERE status IN ('ok','archive')" ) as $row ) {
+		foreach ( $wpdb->get_results( $wpdb->prepare( "SELECT source_id, target_id, target_url, status FROM %i WHERE status IN ('ok','archive')", $links ) ) as $row ) {
 			if ( 'ok' === $row->status ) {
 				$adj[ (string) (int) $row->source_id ][] = array( (string) (int) $row->target_id, 1 );
 			} elseif ( isset( $map[ $row->target_url ] ) && is_string( $map[ $row->target_url ] ) && 0 === strpos( $map[ $row->target_url ], 'term:' ) ) {
@@ -471,8 +476,14 @@ class Link_Index {
 		$template_taxonomies = apply_filters( 'sitegraph_template_term_links', array( 'category' ) );
 		if ( $template_taxonomies ) {
 			$placeholders = implode( ',', array_fill( 0, count( $template_taxonomies ), '%s' ) );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT tr.object_id, tt.taxonomy, tt.term_id FROM {$wpdb->term_relationships} tr INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tt.taxonomy IN ($placeholders)", $template_taxonomies ) );
+			$rows = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- the replacements are passed as one array.
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a list of %s placeholders, one per taxonomy.
+					"SELECT tr.object_id, tt.taxonomy, tt.term_id FROM %i tr INNER JOIN %i tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tt.taxonomy IN ($placeholders)",
+					array_merge( array( $wpdb->term_relationships, $wpdb->term_taxonomy ), $template_taxonomies )
+				)
+			);
 			foreach ( $rows as $row ) {
 				$adj[ (string) (int) $row->object_id ][] = array( 'term:' . $row->taxonomy . ':' . (int) $row->term_id, 1 );
 			}
@@ -533,7 +544,6 @@ class Link_Index {
 			'fields'           => 'ids',
 			'orderby'          => 'date',
 			'order'            => 'DESC',
-			'suppress_filters' => true,
 		);
 		if ( $term ) {
 			$args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
@@ -581,7 +591,6 @@ class Link_Index {
 				'post_type'        => 'wp_navigation',
 				'post_status'      => 'publish',
 				'numberposts'      => 20,
-				'suppress_filters' => true,
 			)
 		);
 		foreach ( $navigations as $navigation ) {
@@ -644,7 +653,6 @@ class Link_Index {
 					'post_parent'      => 0,
 					'numberposts'      => 50,
 					'fields'           => 'ids',
-					'suppress_filters' => true,
 				)
 			)
 		);

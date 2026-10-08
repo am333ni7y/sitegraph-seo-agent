@@ -28,6 +28,10 @@ Try: *"Audit my site with SiteGraph and tell me the five changes that would help
 
 The plugin author receives no data. See the [privacy policy](https://github.com/am333ni7y/sitegraph-seo-agent/blob/main/PRIVACY.md).
 
+## Credits
+
+Made by [AMEEEN ZED](https://aminzahed.ir/). Part of [WP Needs](https://wp-needs.com/) — WordPress plugins, themes and support.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

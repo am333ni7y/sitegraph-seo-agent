@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name:       SiteGraph SEO Agent
- * Plugin URI:        https://github.com/am333ni7y/sitegraph-seo-agent
+ * Plugin URI:        https://wp-needs.com/
  * Description:       Finds your weak pages, turns your internal link graph and Search Console data into a prioritized action plan, and lets AI agents such as Claude fix issues as reviewable changesets with one-click undo and redo.
  * Version:           0.1.1
  * Requires at least: 6.9
  * Requires PHP:      7.4
- * Author:            Amin Zahed (AMEEEN ZED) AMEEEN.IR
- * Author URI:        https://github.com/am333ni7y
+ * Author:            AMEEEN ZED
+ * Author URI:        https://aminzahed.ir/
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
  * Text Domain:       sitegraph-seo-agent

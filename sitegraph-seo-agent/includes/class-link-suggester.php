@@ -10,6 +10,10 @@ namespace SiteGraph;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Link_Suggester {
 
 	const MAX_SOURCES = 600;
@@ -93,7 +97,7 @@ class Link_Suggester {
 		}
 		global $wpdb;
 		$table = Installer::table( 'pages' );
-		$rows  = $wpdb->get_results( "SELECT post_id, title FROM $table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows  = $wpdb->get_results( $wpdb->prepare( 'SELECT post_id, title FROM %i', $table ) );
 		$words = array();
 		foreach ( $rows as $row ) {
 			foreach ( Page_Analyzer::title_tokens( $row->title ) as $token ) {
@@ -118,10 +122,8 @@ class Link_Suggester {
 		$links = Installer::table( 'links' );
 
 		$phrases = self::phrases( $target_id );
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$already = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT source_id FROM $links WHERE target_id = %d AND status = 'ok'", $target_id ) ) );
-		$sources = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, title, url, inbound, score FROM $pages WHERE post_id != %d ORDER BY inbound DESC, score DESC LIMIT %d", $target_id, self::MAX_SOURCES ) );
-		// phpcs:enable
+		$already = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT source_id FROM %i WHERE target_id = %d AND status = 'ok'", $links, $target_id ) ) );
+		$sources = $wpdb->get_results( $wpdb->prepare( 'SELECT post_id, title, url, inbound, score FROM %i WHERE post_id != %d ORDER BY inbound DESC, score DESC LIMIT %d', $pages, $target_id, self::MAX_SOURCES ) );
 
 		$already     = array_flip( $already );
 		$target_cats = wp_get_post_terms( $target_id, 'category', array( 'fields' => 'ids' ) );

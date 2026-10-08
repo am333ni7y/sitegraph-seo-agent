@@ -9,6 +9,10 @@ namespace SiteGraph;
 
 defined( 'ABSPATH' ) || exit;
 
+// SiteGraph keeps its link index, page scores, search data and changesets in its own
+// tables. They change on every scan or edit, so they are queried directly, not cached.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 class Page_Analyzer {
 
 	/**
@@ -162,8 +166,7 @@ class Page_Analyzer {
 	public static function score_all() {
 		global $wpdb;
 		$table = Installer::table( 'pages' );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( "SELECT post_id, post_type, title, word_count, inbound, outbound, broken_out, depth, has_meta_desc, modified_gmt, published_gmt FROM $table" );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT post_id, post_type, title, word_count, inbound, outbound, broken_out, depth, has_meta_desc, modified_gmt, published_gmt FROM %i', $table ) );
 
 		$search     = Search_Data::all();
 		$has_search = ! empty( $search );
@@ -396,7 +399,7 @@ class Page_Analyzer {
 		global $wpdb;
 		Link_Index::ensure_fresh();
 		$table = Installer::table( 'pages' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE post_id = %d", $post_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE post_id = %d', $table, $post_id ) );
 		return $row ? self::format( $row, Search_Data::get( $post_id ) ) : null;
 	}
 
@@ -420,13 +423,19 @@ class Page_Analyzer {
 
 		$table  = Installer::table( 'pages' );
 		$search = Installer::table( 'search' );
-		$where  = $wpdb->prepare( 'p.score <= %d', (int) $args['max_score'] );
-		if ( '' !== $args['post_type'] ) {
-			$where .= $wpdb->prepare( ' AND p.post_type = %s', $args['post_type'] );
-		}
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT p.*, s.clicks, s.impressions, s.ctr, s.position FROM %i p LEFT JOIN %i s ON s.post_id = p.post_id WHERE p.score <= %d ORDER BY p.score ASC, s.impressions DESC, p.post_id ASC', $table, $search, (int) $args['max_score'] ) );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( "SELECT p.*, s.clicks, s.impressions, s.ctr, s.position FROM $table p LEFT JOIN $search s ON s.post_id = p.post_id WHERE $where ORDER BY p.score ASC, s.impressions DESC, p.post_id ASC" );
+		if ( '' !== $args['post_type'] ) {
+			$type = $args['post_type'];
+			$rows = array_values(
+				array_filter(
+					$rows,
+					function ( $row ) use ( $type ) {
+						return $row->post_type === $type;
+					}
+				)
+			);
+		}
 
 		if ( '' !== $args['issue'] ) {
 			$code = $args['issue'];
@@ -463,10 +472,8 @@ class Page_Analyzer {
 		Link_Index::ensure_fresh();
 		$table = Installer::table( 'pages' );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$stats = $wpdb->get_row( "SELECT COUNT(*) AS pages, AVG(score) AS avg_score, SUM(CASE WHEN score < 40 THEN 1 ELSE 0 END) AS critical, SUM(CASE WHEN score >= 40 AND score < 60 THEN 1 ELSE 0 END) AS weak, SUM(CASE WHEN score >= 60 AND score < 80 THEN 1 ELSE 0 END) AS fair, SUM(CASE WHEN score >= 80 THEN 1 ELSE 0 END) AS good, SUM(broken_out) AS broken FROM $table" );
-		$rows  = $wpdb->get_col( "SELECT issues FROM $table" );
-		// phpcs:enable
+		$stats = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) AS pages, AVG(score) AS avg_score, SUM(CASE WHEN score < 40 THEN 1 ELSE 0 END) AS critical, SUM(CASE WHEN score >= 40 AND score < 60 THEN 1 ELSE 0 END) AS weak, SUM(CASE WHEN score >= 60 AND score < 80 THEN 1 ELSE 0 END) AS fair, SUM(CASE WHEN score >= 80 THEN 1 ELSE 0 END) AS good, SUM(broken_out) AS broken FROM %i', $table ) );
+		$rows  = $wpdb->get_col( $wpdb->prepare( 'SELECT issues FROM %i', $table ) );
 
 		$issue_counts = array();
 		foreach ( $rows as $json ) {

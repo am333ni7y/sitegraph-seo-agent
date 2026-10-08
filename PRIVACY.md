@@ -2,7 +2,7 @@
 
 _Last updated: October 7, 2026_
 
-This policy covers the **SiteGraph SEO Agent** WordPress plugin and the **SiteGraph SEO** plugin for Claude ("SiteGraph"), published by Amin Zahed.
+This policy covers the **SiteGraph SEO Agent** WordPress plugin and the **SiteGraph SEO** plugin for Claude ("SiteGraph"), published by AMEEEN ZED (<https://aminzahed.ir>) as part of WP Needs (<https://wp-needs.com>).
 
 ## Summary
 
